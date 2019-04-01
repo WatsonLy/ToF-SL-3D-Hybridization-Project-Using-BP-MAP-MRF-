@@ -1,0 +1,5 @@
+﻿C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\VCTargets\Microsoft.CppBuild.targets(391,5): warning MSB8028: The intermediate directory (x64\Debug\) contains files shared from another project (BP-Test 4.0.vcxproj, BP-Test.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+  restore.cpp
+c:\users\jeffrey\documents\school\fourth-year-photonics\research\visual\bp v4.1\bp-test\pnmfile.h(148): warning C4101: 'doc': unreferenced local variable
+c:\users\jeffrey\documents\school\fourth-year-photonics\research\visual\bp v4.1\bp-test\restore.cpp(778): warning C4101: 'edges': unreferenced local variable
+  BP-Test.vcxproj -> C:\Users\jeffrey\Documents\School\Fourth-Year-Photonics\Research\Visual\BP v4.1\x64\Debug\BP-Test 4.1.exe

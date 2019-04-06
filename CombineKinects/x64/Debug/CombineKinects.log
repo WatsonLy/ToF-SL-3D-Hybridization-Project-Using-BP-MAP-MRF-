@@ -1,0 +1,4 @@
+﻿  Restore.cpp
+c:\users\tinky\downloads\research project\tof-sl-3d-hybridization-project-using-bp-map-mrf-\combinekinects 1.3\combinekinects\restore.cpp(275): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+c:\users\tinky\downloads\research project\tof-sl-3d-hybridization-project-using-bp-map-mrf-\combinekinects 1.3\combinekinects\restore.cpp(423): warning C4101: 'bias2': unreferenced local variable
+  CombineKinects.vcxproj -> C:\Users\Tinky\Downloads\Research Project\ToF-SL-3D-Hybridization-Project-Using-BP-MAP-MRF-\CombineKinects 1.3\x64\Debug\CombineKinects.exe

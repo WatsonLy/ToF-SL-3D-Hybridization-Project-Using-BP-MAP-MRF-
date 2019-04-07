@@ -117,7 +117,7 @@ title('Matched SURF points,including outliers');
 % Outputs homography matrix for registration
 [tform,inlierPtsDistorted,inlierPtsOriginal] = ...
     estimateGeometricTransform(matchedPtsDistorted,matchedPtsOriginal,...
-    'projective', "MaxNumTrials", 1000, "Confidence", 99, "MaxDistance",3);
+    'projective', "MaxNumTrials", 1000, "Confidence", 99, "MaxDistance",6.5);
 figure; 
 
 %Displays inlier matched points
@@ -125,8 +125,8 @@ showMatchedFeatures(v1,v2,...
     inlierPtsOriginal,inlierPtsDistorted);
 title('Matched inlier points');
 
-% T = [1.604424, -0.015323728, 0.00000349; 0.041643873, 1.6096871, 0.0000364; -91.827782, -66.427521,	1];
-% tform = projective2d(T);
+T = [1.5277089	-0.026776986 -0.0000358;	-0.010839382 1.5996544 -0.0001383637;-76.933472	-61.545399	1];
+tform = projective2d(T);
  
 
 outputView = imref2d(size(v1));

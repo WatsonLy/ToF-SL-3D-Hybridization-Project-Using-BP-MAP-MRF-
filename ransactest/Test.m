@@ -4,8 +4,8 @@ vid2 = videoinput('kinect', 3, 'BGR_1920x1080');
 vid1.ReturnedColorspace = 'grayscale';
 vid2.ReturnedColorspace = 'grayscale';
 
-vid1.FramesPerTrigger = 1;
-vid2.FramesPerTrigger = 1;
+vid1.FramesPerTrigger = 3;
+vid2.FramesPerTrigger = 3;
 
 start(vid1);
 start(vid2);

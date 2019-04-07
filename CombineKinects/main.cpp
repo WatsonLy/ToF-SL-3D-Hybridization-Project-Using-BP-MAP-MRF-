@@ -121,13 +121,13 @@ int main(int argc, char** argv) {
 		//Cropping Images
 		//----------------------------------------------------------------------------------------------------------------
 		
-		//int startX = 0, startY = 0, width = imReg.cols, height = imReg.rows;//Full
-		//int startX = 0, startY = 0, width = imReg.cols, height = 360;		//Large (Complex + Depth + Transp)
-		int startX = 25, startY = 0, width = imReg.cols - 50, height = 190;		//Large (AC)
-		//int startX = 220, startY = 0, width = 228, height = 370;			//With Backwall
-		//int startX = 195, startY = 75, width = 280, height = 360;			//Multipath
-		//int startX = 220, startY = 86, width = 228, height =285;			//Medium
-		//int startX = 300, startY = 180, width = 55, height = 200;			//Small
+		int startX = 0, startY = 0, width = imReg.cols, height = imReg.rows;	//Full
+		//int startX = 0, startY = 0, width = imReg.cols, height = 360;			//Large (Complex + Depth + Transp)
+		//int startX = 25, startY = 0, width = imReg.cols - 50, height = 190;	//Large (AC)
+		//int startX = 220, startY = 0, width = 228, height = 370;				//With Backwall
+		//int startX = 195, startY = 75, width = 280, height = 360;				//Multipath
+		//int startX = 220, startY = 86, width = 228, height =285;				//Medium
+		//int startX = 300, startY = 180, width = 55, height = 200;				//Small
 		
 		//int startX = 299, startY = 250, width = 80, height = 58;			//at depth 1.27
 		//int startX = 307, startY = 242, width = 67, height = 57;			//at depth 1.38

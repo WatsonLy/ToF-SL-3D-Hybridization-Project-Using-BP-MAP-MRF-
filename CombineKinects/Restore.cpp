@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 #define DATA_K 10000.0F     // truncation of data cost
 #define LAMBDA1 0.05F         // weighting of first data cost
 #define LAMBDA2 0.05F		// weighting of the second data cost
-#define MCONST 0.01F
+#define MCONST 0.001F
 
 
 #define INF 1E10     // large cost

@@ -122,16 +122,23 @@ int main(int argc, char** argv) {
 		//----------------------------------------------------------------------------------------------------------------
 		
 		//int startX = 0, startY = 0, width = imReg.cols, height = imReg.rows;//Full
-		//int startX = 0, startY = 0, width = imReg.cols, height = 360;		//Large
-		int startX = 210, startY = 95, width = 225, height =265;			//Medium
+		//int startX = 0, startY = 0, width = imReg.cols, height = 360;		//Large (Complex + Depth + Transp)
+		int startX = 25, startY = 0, width = imReg.cols - 50, height = 190;		//Large (AC)
+		//int startX = 220, startY = 0, width = 228, height = 370;			//With Backwall
+		//int startX = 195, startY = 75, width = 280, height = 360;			//Multipath
+		//int startX = 220, startY = 86, width = 228, height =285;			//Medium
 		//int startX = 300, startY = 180, width = 55, height = 200;			//Small
 		
-		//int startX = 310, startY = 200, width = 35, height = 33;			//at depth 1.6
-		//int startX = 311, startY = 206, width = 29, height = 29;			//at depth 1.9
-		//int startX = 263, startY = 96, width = 120, height = 191;			//at depth 2.2
-		//int startX = 217, startY = 135, width = 227, height = 203;		//Qualitative
-		//int startX = 158, startY = 0, width = 290, height = 335;			//Multipath
-		//int startX = 168, startY = 140, width = 100, height = 220;		//Multipath (Small)
+		//int startX = 299, startY = 250, width = 80, height = 58;			//at depth 1.27
+		//int startX = 307, startY = 242, width = 67, height = 57;			//at depth 1.38
+		//int startX = 307, startY = 238, width = 63, height = 55;			//at depth 1.48
+		//int startX = 311, startY = 238, width = 56, height = 52;			//at depth 1.58
+		//int startX = 310, startY = 240, width = 56, height = 51;			//at depth 1.68
+		//int startX = 312, startY = 238, width = 53, height = 47;			//at depth 1.78
+		//int startX = 313, startY = 240, width = 50, height = 43;			//at depth 1.87
+		//int startX = 312, startY = 238, width = 48, height = 42;			//at depth 1.98
+		//int startX = 312, startY = 238, width = 42, height = 37;			//at depth 2.08
+		//int startX = 318, startY = 238, width = 42, height = 35;			//at depth 2.14 and 2.25
 
 		cv::Rect ROI(startX, startY, width, height);
 		cv::Mat CropDepthV1 = DepthV1(ROI).clone();
@@ -146,13 +153,6 @@ int main(int argc, char** argv) {
 		cv::imshow("Cropped KinectV1", ScaledV1);
 		cv::imshow("Cropped KinectV2", ScaledV2);
 
-		//save images
-		cv::imwrite("KinectV1.tif", DepthV1);
-		cv::imwrite("KinectV2.tif", DepthV2);
-		cv::imwrite("Registered KinectV2.tif", imReg);
-		cv::imwrite("Cropped KinectV1.tif", CropDepthV1);
-		cv::imwrite("Cropped KinectV2.tif", CropimReg);
-
 		//----------------------------------------------------------------------------------------------------------------
 		//Restoration using Belief Propogation
 		//----------------------------------------------------------------------------------------------------------------
@@ -166,22 +166,48 @@ int main(int argc, char** argv) {
 		uint16_t* v1Arr = new uint16_t[CropDepthV1.rows*CropDepthV1.cols];
 		uint16_t* v2Arr = new uint16_t[CropimReg.rows*CropimReg.cols];
 
+		float dOFFSET;
+		float A = 0.024257;
+		float B = -0.044841;
+		float C = 36.015;
+
 		for (int i = 0; i < CropDepthV1.rows; ++i) {
 			for (int j = 0; j < CropDepthV1.cols; ++j) {
-				v1Arr[i*CropDepthV1.cols+j] = CropDepthV1.at<uint16_t>(i, j);
-				//std::cout << (v1Arr[i*CropDepthV1.cols+j]);
+
+				//std::cout << CropDepthV1.at<uint16_t>(i, j);
 				//std::cout << " ";
+
+				//dOFFSET = (A * (CropDepthV1.at<uint16_t>(i, j)^2) + (B * (CropDepthV1.at<uint16_t>(i, j))));
+				//CropDepthV1.at<uint16_t>(i, j) += (uint16_t)dOFFSET;
+
+				v1Arr[i*CropDepthV1.cols+j] = CropDepthV1.at<uint16_t>(i, j);
+				//std::cout << dOFFSET << " " << CropDepthV1.at<uint16_t>(i, j);
+				//std::cout << "\n";
 			}
 		}
 		
 		for (int i = 0; i < CropimReg.rows; ++i) {
 			for (int j = 0; j < CropimReg.cols; ++j) {
-				v2Arr[i*CropimReg.cols+j] = CropimReg.at<uint16_t>(i, j);
-				//std::cout << (v2Arr[i*CropimReg.cols+j]);
+
+				//std::cout << CropimReg.at<uint16_t>(i, j);
 				//std::cout << " ";
+
+				dOFFSET = ((A * (CropimReg.at<uint16_t>(i, j) ^ 2)) + (B * (CropimReg.at<uint16_t>(i, j))) - C);
+				if (CropimReg.at<uint16_t>(i, j) > abs(dOFFSET))
+					CropimReg.at<uint16_t>(i, j) += (uint16_t)dOFFSET;
+
+				v2Arr[i*CropimReg.cols + j] = CropimReg.at<uint16_t>(i, j);
+				//std::cout << dOFFSET << " " << CropimReg.at<uint16_t>(i, j);
+				//std::cout << "\n";
 			}
 		}
 		
+		//save images
+		cv::imwrite("KinectV1.tif", DepthV1);
+		cv::imwrite("KinectV2.tif", DepthV2);
+		cv::imwrite("Registered KinectV2.tif", imReg);
+		cv::imwrite("Cropped KinectV1.tif", CropDepthV1);
+		cv::imwrite("Cropped KinectV2.tif", CropimReg);
 
 		image<uint16_t> * inputV1 = new image<uint16_t>(CropDepthV1.cols, CropDepthV1.rows);
 		inputV1->data = v1Arr;

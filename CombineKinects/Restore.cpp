@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 #define DATA_K 10000.0F     // truncation of data cost
 #define LAMBDA1 0.05F         // weighting of first data cost
 #define LAMBDA2 0.05F		// weighting of the second data cost
-#define MCONST 0.001F
+#define MCONST 0.01F
 
 
 #define INF 1E10     // large cost
@@ -52,8 +52,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 #define SBIAS 1.0F		//Adjusts smoothness term bias 
 #define DBIAS 1.0F		//Adjusts data term bias 
 
-#define ALPHA 0.0F	//Increases bias towards V2 Data term
-#define BETA 0.0F	//Increases bias towards V1 Data term
+
 
 // dt of 1d function
 // min convolution algorithm for quadratic cost
@@ -67,7 +66,7 @@ float* Restore::dt(float *f, int n, int &low, int &up) {
 	z[1] = +INF;
 
 	// Compute lower envelope
-	for (int q = low + 1; q <= up - 1; q++) {
+	for (int q = 1; q <= n-1; q++) {
 		float s = ((f[q] + square(q)) - (f[v[k]] + square(v[k])))
 			/ (2 * (q - v[k]));
 		while (s <= z[k]) {
@@ -83,7 +82,7 @@ float* Restore::dt(float *f, int n, int &low, int &up) {
 
 	k = 0;
 
-	for (int q = low; q <= up - 1; q++) {
+	for (int q = 0; q <= n-1; q++) {
 		while (z[k + 1] < q)
 			k++;
 		d[q] = square(q - v[k]) + f[v[k]];
@@ -103,7 +102,7 @@ void Restore::msg(float s1[VALUES], float s2[VALUES],
 	// aggregate and find min
 	float minimum = INF;
 
-	for (int value = low; value <= up; value++) {
+	for (int value = 0; value < VALUES; value++) {
 		dst[value] = s1[value] + s2[value] + s3[value] + s4[value];
 		if (dst[value] < minimum)
 			minimum = dst[value];
@@ -116,16 +115,18 @@ void Restore::msg(float s1[VALUES], float s2[VALUES],
 	
 	// truncate and store in destination vector
 	minimum += DISC_K;
-	for (int value = low; value <= up; value++)
+	for (int value = 0; value < VALUES; value++) {
 		dst[value] = std::min(tmp[value], minimum);
-
+	}
+		
+		
 	// normalize
 	float val = 0;
-	for (int value = low; value < up; value++)
+	for (int value = 0; value < VALUES; value++)
 		val += dst[value];
 
 	val /= VALUES;
-	for (int value = low; value < up; value++)
+	for (int value = 0; value < VALUES; value++)
 		dst[value] -= val;
 
 		
@@ -244,34 +245,17 @@ image<uint16_t>* Restore::restore_ms(image<uint16_t>* img1, image<uint16_t>* img
 	image<float[VALUES]> *r;
 	image<float[VALUES]> *data;
 
-	image<int> *lower = new image<int>(width, height);
-	image<int> *upper = new image<int>(width, height);
-
-	/*
-	for (int x = 0; x < img1->width(); ++x) {
-		for (int y = 0; y < img1->height(); ++y) {
-			uint16_t check = imRef(img1, x, y);
-			std::cout << check;
-			std::cout << "\n";
-		}
-	}
-	
-	for (int x = 0; x < img1->width(); ++x) {
-		for (int y = 0; y < img1->height(); ++y) {
-			int check = img1->data[x,y];
-			std::cout << check;
-			std::cout << "\n";
-		}
-	}*/
+	//image<int> *lower = new image<int>(width, height);
+	//image<int> *upper = new image<int>(width, height);
 
 
-	//for (int i = 0; i < LEVELS; i++)
-		data = new image<float[VALUES]>(width, height);
+	data = new image<float[VALUES]>(width, height);
 
 	//Data costs
 	for (int y = 0; y < height; y++) {
 		for (int x = 0; x < width; x++) {
 
+			/*
 			int lowerbound = INF, upperbound = 0, dx, dy, ddx, ddy;
 			char node = '0';
 
@@ -396,7 +380,7 @@ image<uint16_t>* Restore::restore_ms(image<uint16_t>* img1, image<uint16_t>* img
 			imRef(lower, x, y) = lowerbound;
 			imRef(upper, x, y) = upperbound;
 
-			/*
+			
 			if (lowerbound == 0 && bound0 == 1) {
 
 				for (int value = lowerbound; value <= upperbound; value++) {
@@ -417,112 +401,46 @@ image<uint16_t>* Restore::restore_ms(image<uint16_t>* img1, image<uint16_t>* img
 				//imRef(data, x, y)[imRef(img1, x, y)] = 0.0;
 			}*/
 
-			lowerbound = 0;
-			upperbound = VALUES-1;
+			float bias1;
 
-			float bias1, bias2;
-
-			for (int value = lowerbound; value <= upperbound; value++) {
+			for (int value = 0; value < VALUES; value++) {
 
 				//Quadratic model for data cost
 				float val = square((float)(imRef(img1, x, y) - value));
 				float val2 = square((float)(imRef(img2, x, y) - value));
 				
-				if (value > 3000)
-					bias1 = MCONST * (LAMBDA1*DATA_K / upperbound) * value;
+				if (value > 3000 || value < 1000) {
+					bias1 = (MCONST * (LAMBDA1*DATA_K / VALUES) * value) + 1.0f;
+					//std::cout << value << " " << bias1 << "\n";
+					imRef(data, x, y)[value] = (((LAMBDA1 * std::min(val, DATA_K))) + ( bias1 *(LAMBDA2 * std::min(val2, DATA_K))));
+				}
 				else
-					bias1 = 0.0f;
-					
-				//bias1 = MCONST * (LAMBDA1*DATA_K / upperbound) * value;
-				//bias1 = 0.0f;
+					imRef(data, x, y)[value] = (((LAMBDA1 * std::min(val, DATA_K))) + ((LAMBDA2 * std::min(val2, DATA_K))));
+				
 
-				//With two label sets, we take the smallest difference between a label and the observed intensity.
-				imRef(data, x, y)[value] = std::min( bias1 + ((LAMBDA1 * std::min(val, DATA_K))), ( (LAMBDA2 * std::min(val2, DATA_K))) );
-				//imRef(data, x, y)[value] = 3000.0F;//std::min(val, DATA_K);
+				
+				/*
+				if (imRef(img1, x, y) == 0)
+					imRef(data, x, y)[value] = (LAMBDA2 * std::min(val2, DATA_K));
+				else if (imRef(img2, x, y) == 0)
+					imRef(data, x, y)[value] = (LAMBDA1 * std::min(val, DATA_K));
+				else
+				*/
+
+					//With two label sets, we take the smallest difference between a label and the observed intensity.
+					
+
+					//std::cout << (LAMBDA1 * std::min(val, DATA_K)) << " " << bias1 * (LAMBDA2 * std::min(val2, DATA_K)) << "\n";
+					//imRef(data, x, y)[value] = std::min(bias1 + ((LAMBDA1 * std::min(val, DATA_K))), ((LAMBDA2 * std::min(val2, DATA_K))));
+					//imRef(data, x, y)[value] = (((LAMBDA1 * std::min(val, DATA_K))) - ((LAMBDA2 * std::min(val2, DATA_K))));
+					//imRef(data, x, y)[value] = 3000.0F;//std::min(val, DATA_K);
 
 			}
 			
 		}
 	}
-	//delete data;
-
-	
-	//// data pyramid
-	//for (int i = 1; i < LEVELS; i++) {
-	//	int old_width = data[i - 1]->width();
-	//	int old_height = data[i - 1]->height();
-	//	int new_width = (int)ceil(old_width / 2.0);
-	//	int new_height = (int)ceil(old_height / 2.0);
-
-	//	assert(new_width >= 1);
-	//	assert(new_height >= 1);
-
-
-	//	data[i] = new image<float[VALUES]>(new_width, new_height);
-	//	for (int y = 0; y < old_height; y++) {
-	//		for (int x = 0; x < old_width; x++) {
-
-	//			int lowerbound = imRef(lower, x, y);
-	//			int upperbound = imRef(upper, x, y);
-
-	//			for (int value = lowerbound; value <= upperbound; value++) {
-	//				imRef(data[i], x / 2, y / 2)[value] += imRef(data[i - 1], x, y)[value];
-	//			}
-
-	//		}
-	//	}
-	//}
-	//
-
-	//
-	//// run bp from coarse to fine
-	//for (int i = LEVELS - 1; i >= 0; i--) {
-	//	int width = data[i]->width();
-	//	int height = data[i]->height();
-
-	//	// allocate & init memory for messages
-	//	if (i == LEVELS - 1) {
-	//		// in the coarsest level messages are initialized to zero
-	//		u[i] = new image<float[VALUES]>(width, height);
-	//		d[i] = new image<float[VALUES]>(width, height);
-	//		l[i] = new image<float[VALUES]>(width, height);
-	//		r[i] = new image<float[VALUES]>(width, height);
-	//	}
-	//	else {
-	//		// initialize messages from values of previous level
-	//		u[i] = new image<float[VALUES]>(width, height, false);
-	//		d[i] = new image<float[VALUES]>(width, height, false);
-	//		l[i] = new image<float[VALUES]>(width, height, false);
-	//		r[i] = new image<float[VALUES]>(width, height, false);
-
-	//		for (int y = 0; y < height; y++) {
-	//			for (int x = 0; x < width; x++) {
-
-	//				for (int value = imRef(lower, x, y); value <= imRef(upper, x, y); value++) {
-	//					imRef(u[i], x, y)[value] = imRef(u[i + 1], x / 2, y / 2)[value];
-	//					imRef(d[i], x, y)[value] = imRef(d[i + 1], x / 2, y / 2)[value];
-	//					imRef(l[i], x, y)[value] = imRef(l[i + 1], x / 2, y / 2)[value];
-	//					imRef(r[i], x, y)[value] = imRef(r[i + 1], x / 2, y / 2)[value];
-	//				} 
-	//				
-	//			}
-	//		}
-	//		// delete old messages and data
-	//		delete u[i + 1];
-	//		delete d[i + 1];
-	//		delete l[i + 1];
-	//		delete r[i + 1];
-	//		delete data[i + 1];
-	//	}
-
-	//	// BP
-	//	//bp_cb(u[i], d[i], l[i], r[i], data[i], ITER);
-
-	//} 
 
 	//BP
-	int bwidth = data->width();
-	int bheight = data->height();
 
 	u = new image<float[VALUES]>(width, height);
 	d = new image<float[VALUES]>(width, height);
@@ -532,14 +450,11 @@ image<uint16_t>* Restore::restore_ms(image<uint16_t>* img1, image<uint16_t>* img
 	for (int t = 0; t < ITER; t++) {
 		std::cout << "iter " << t << "\n";
 
-		for (int y = 1; y < bheight - 1; y++) {
-			for (int x = ((y + t) % 2) + 1; x < bwidth - 1; x += 2) {
+		for (int y = 1; y < height - 1; y++) {
+			for (int x = ((y + t) % 2) + 1; x < width - 1; x += 2) {
 
-				int lowerbound = imRef(lower, x, y);
-				int upperbound = imRef(upper, x, y);
-
-				lowerbound = 0;
-				upperbound = VALUES-1;
+				int lowerbound = 0;
+				int upperbound = VALUES-1;
 
 				msg(imRef(u, x, y + 1), imRef(l, x + 1, y), imRef(r, x - 1, y),
 					imRef(data, x, y), imRef(u, x, y), lowerbound, upperbound);
@@ -568,12 +483,7 @@ image<uint16_t>* Restore::restore_ms(image<uint16_t>* img1, image<uint16_t>* img
 			float best_val = INF;
 			float val = 0;
 
-			int lowerbound = imRef(lower, x, y);
-			int upperbound = imRef(upper, x, y);
-
-			lowerbound = 0;
-			upperbound = VALUES-1;
-			for (int value = lowerbound; value < upperbound; value++) {
+			for (int value = 0; value < VALUES; value++) {
 				//std::cout << imRef(u, x, y + 1)[value] << " " << imRef(d, x, y - 1)[value] << " " << imRef(l, x + 1, y)[value] << " " << imRef(r, x - 1, y)[value] << " " << imRef(data, x, y)[value] << "\n";
 
 				val = (float)imRef(u, x, y + 1)[value] + (float)imRef(d, x, y - 1)[value] + (float)imRef(l, x + 1, y)[value] + (float)imRef(r, x - 1, y)[value] + (float)imRef(data, x, y)[value];
@@ -595,6 +505,8 @@ image<uint16_t>* Restore::restore_ms(image<uint16_t>* img1, image<uint16_t>* img
 	delete l;
 	delete r;
 	delete data;
+	//delete lower;
+	//delete upper;
 
 	return out;
 
